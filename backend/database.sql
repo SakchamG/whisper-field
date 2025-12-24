@@ -2,19 +2,18 @@
 CREATE DATABASE IF NOT EXISTS whisper_field;
 USE whisper_field;
 
--- Create whispers table
-CREATE TABLE whispers (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+-- Change to PostgreSQL syntax:
+CREATE TABLE IF NOT EXISTS whispers (
+    id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
-    topic ENUM('confession', 'life', 'secrets', 'advice', 'love', 'random') NOT NULL,
+    topic VARCHAR(50) NOT NULL CHECK (topic IN ('confession', 'life', 'secrets', 'advice', 'love', 'random')),
     is_sensitive BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
 );
 
--- Create replies table
-CREATE TABLE replies (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS replies (
+    id SERIAL PRIMARY KEY,
     whisper_id INT NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -10,14 +10,14 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Database connection
+// For PostgreSQL on Render:
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+    port: process.env.DB_PORT || 5432, // PostgreSQL default port
+    ssl: { rejectUnauthorized: false } // Always use SSL on Render
 };
 
 let pool;

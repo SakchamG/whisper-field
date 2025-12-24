@@ -1,108 +1,108 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// For PostgreSQL on Render:
-const dbConfig = {
+// PostgreSQL connection - using environment variables
+const pool = new Pool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 5432, // PostgreSQL default port
-    ssl: { rejectUnauthorized: false } // Always use SSL on Render
-};
-
-let pool;
-
-async function initDatabase() {
-    try {
-        pool = mysql.createPool(dbConfig);
-        
-        // Test connection
-        const connection = await pool.getConnection();
-        console.log('✅ Connected to MySQL database');
-        connection.release();
-        
-        // Create tables if they don't exist
-        await createTables();
-        return true;
-    } catch (error) {
-        console.error('❌ Database connection failed:', error);
-        return false;
+    port: process.env.DB_PORT || 5432,
+    ssl: {
+        rejectUnauthorized: false
     }
-}
+});
 
-async function createTables() {
-    try {
-        // Create whispers table
-        await pool.execute(`
+// Test database connection
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('❌ Database connection error:', err.message);
+    } else {
+        console.log('✅ Connected to PostgreSQL database');
+        
+        // Create tables
+        client.query(`
             CREATE TABLE IF NOT EXISTS whispers (
-                id INT PRIMARY KEY AUTO_INCREMENT,
+                id SERIAL PRIMARY KEY,
                 content TEXT NOT NULL,
-                topic ENUM('confession', 'life', 'secrets', 'advice', 'love', 'random') NOT NULL,
+                topic VARCHAR(50) NOT NULL CHECK (topic IN ('confession', 'life', 'secrets', 'advice', 'love', 'random')),
                 is_sensitive BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                deleted_at TIMESTAMP NULL,
-                INDEX idx_topic (topic),
-                INDEX idx_created (created_at)
+                deleted_at TIMESTAMP NULL
             )
-        `);
+        `, (err) => {
+            if (err) console.error('Error creating whispers table:', err);
+            else console.log('✅ Whispers table ready');
+        });
         
-        // Create replies table
-        await pool.execute(`
+        client.query(`
             CREATE TABLE IF NOT EXISTS replies (
-                id INT PRIMARY KEY AUTO_INCREMENT,
+                id SERIAL PRIMARY KEY,
                 whisper_id INT NOT NULL,
                 content TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 deleted_at TIMESTAMP NULL,
-                FOREIGN KEY (whisper_id) REFERENCES whispers(id) ON DELETE CASCADE,
-                INDEX idx_whisper (whisper_id)
+                FOREIGN KEY (whisper_id) REFERENCES whispers(id) ON DELETE CASCADE
             )
-        `);
+        `, (err) => {
+            if (err) console.error('Error creating replies table:', err);
+            else console.log('✅ Replies table ready');
+        });
         
-        console.log('✅ Tables created/verified');
-    } catch (error) {
-        console.error('❌ Error creating tables:', error);
+        release();
     }
-}
+});
 
 // API Routes
 
-// Get whispers
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        message: 'Whisper Field API is running'
+    });
+});
+
+// Get all whispers
 app.get('/api/whispers', async (req, res) => {
     try {
         const { topic } = req.query;
         let query = 'SELECT * FROM whispers WHERE deleted_at IS NULL';
-        const params = [];
+        let params = [];
         
         if (topic && topic !== 'all') {
-            query += ' AND topic = ?';
+            query += ' AND topic = $1';
             params.push(topic);
         }
         
         query += ' ORDER BY created_at DESC';
         
-        const [rows] = await pool.execute(query, params);
+        const result = await pool.query(query, params);
         
-        // Get reply count
-        for (let whisper of rows) {
-            const [replyRows] = await pool.execute(
-                'SELECT COUNT(*) as count FROM replies WHERE whisper_id = ? AND deleted_at IS NULL',
-                [whisper.id]
-            );
-            whisper.replies_count = replyRows[0].count;
-        }
+        // Get reply counts for each whisper
+        const whispersWithReplies = await Promise.all(
+            result.rows.map(async (whisper) => {
+                const replyResult = await pool.query(
+                    'SELECT COUNT(*) as count FROM replies WHERE whisper_id = $1 AND deleted_at IS NULL',
+                    [whisper.id]
+                );
+                return {
+                    ...whisper,
+                    replies_count: parseInt(replyResult.rows[0].count) || 0
+                };
+            })
+        );
         
-        res.json({ success: true, data: rows });
+        res.json({ success: true, data: whispersWithReplies });
     } catch (error) {
         console.error('Error fetching whispers:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch whispers' });
@@ -113,16 +113,16 @@ app.get('/api/whispers', async (req, res) => {
 app.get('/api/whispers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await pool.execute(
-            'SELECT * FROM whispers WHERE id = ? AND deleted_at IS NULL',
+        const result = await pool.query(
+            'SELECT * FROM whispers WHERE id = $1 AND deleted_at IS NULL',
             [id]
         );
         
-        if (rows.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Whisper not found' });
         }
         
-        res.json({ success: true, data: rows[0] });
+        res.json({ success: true, data: result.rows[0] });
     } catch (error) {
         console.error('Error fetching whisper:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch whisper' });
@@ -138,33 +138,28 @@ app.post('/api/whispers', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Content and topic are required' });
         }
         
-        const [result] = await pool.execute(
-            'INSERT INTO whispers (content, topic, is_sensitive) VALUES (?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO whispers (content, topic, is_sensitive) VALUES ($1, $2, $3) RETURNING *',
             [content, topic, is_sensitive || false]
         );
         
-        const [rows] = await pool.execute(
-            'SELECT * FROM whispers WHERE id = ?',
-            [result.insertId]
-        );
-        
-        res.json({ success: true, data: rows[0] });
+        res.json({ success: true, data: result.rows[0] });
     } catch (error) {
         console.error('Error creating whisper:', error);
         res.status(500).json({ success: false, error: 'Failed to create whisper' });
     }
 });
 
-// Get replies
+// Get replies for a whisper
 app.get('/api/whispers/:id/replies', async (req, res) => {
     try {
         const { id } = req.params;
-        const [rows] = await pool.execute(
-            'SELECT * FROM replies WHERE whisper_id = ? AND deleted_at IS NULL ORDER BY created_at ASC',
+        const result = await pool.query(
+            'SELECT * FROM replies WHERE whisper_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC',
             [id]
         );
         
-        res.json({ success: true, data: rows });
+        res.json({ success: true, data: result.rows });
     } catch (error) {
         console.error('Error fetching replies:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch replies' });
@@ -181,72 +176,47 @@ app.post('/api/whispers/:id/replies', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Content is required' });
         }
         
-        const [whisperRows] = await pool.execute(
-            'SELECT id FROM whispers WHERE id = ? AND deleted_at IS NULL',
+        // Check if whisper exists
+        const whisperResult = await pool.query(
+            'SELECT id FROM whispers WHERE id = $1 AND deleted_at IS NULL',
             [id]
         );
         
-        if (whisperRows.length === 0) {
+        if (whisperResult.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Whisper not found' });
         }
         
-        const [result] = await pool.execute(
-            'INSERT INTO replies (whisper_id, content) VALUES (?, ?)',
+        const result = await pool.query(
+            'INSERT INTO replies (whisper_id, content) VALUES ($1, $2) RETURNING *',
             [id, content]
         );
         
-        const [rows] = await pool.execute(
-            'SELECT * FROM replies WHERE id = ?',
-            [result.insertId]
-        );
-        
-        res.json({ success: true, data: rows[0] });
+        res.json({ success: true, data: result.rows[0] });
     } catch (error) {
         console.error('Error creating reply:', error);
         res.status(500).json({ success: false, error: 'Failed to create reply' });
     }
 });
 
-// Auto-delete function
-async function autoDeleteOldWhispers() {
+// Auto-delete old whispers (runs every hour)
+setInterval(async () => {
     try {
         const deleteTime = new Date(Date.now() - 48 * 60 * 60 * 1000);
         
-        await pool.execute(
-            'UPDATE whispers SET deleted_at = NOW() WHERE created_at < ? AND deleted_at IS NULL',
+        await pool.query(
+            'UPDATE whispers SET deleted_at = NOW() WHERE created_at < $1 AND deleted_at IS NULL',
             [deleteTime]
         );
         
-        console.log('✅ Auto-delete completed');
+        console.log('✅ Auto-delete completed:', new Date().toISOString());
     } catch (error) {
         console.error('❌ Auto-delete failed:', error);
     }
-}
-
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+}, 60 * 60 * 1000); // Run every hour
 
 // Start server
-async function startServer() {
-    const dbConnected = await initDatabase();
-    
-    if (!dbConnected) {
-        console.error('Failed to connect to database. Exiting...');
-        process.exit(1);
-    }
-    
-    // Schedule auto-delete every hour
-    setInterval(autoDeleteOldWhispers, 60 * 60 * 1000);
-    
-    // Run on startup
-    autoDeleteOldWhispers();
-    
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📝 API available at http://localhost:${PORT}/api`);
-    });
-}
-
-startServer();
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📝 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`📝 API Base: http://localhost:${PORT}/api`);
+});

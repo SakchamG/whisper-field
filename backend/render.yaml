@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: whisper-field-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_SSL
+        value: true
+
+databases:
+  - name: whisper-field-db
+    databaseName: whisper_field
+    plan: free
+    ipAllowList: []

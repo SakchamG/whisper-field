@@ -207,12 +207,24 @@
             letter-spacing: 1px;
         }
 
+        /* Original topics */
         .topic-confession { background: rgba(157, 78, 221, 0.2); color: #c77dff; }
         .topic-life { background: rgba(0, 200, 255, 0.2); color: #00c8ff; }
         .topic-secrets { background: rgba(255, 100, 100, 0.2); color: #ff6464; }
         .topic-advice { background: rgba(100, 255, 100, 0.2); color: #64ff64; }
         .topic-love { background: rgba(255, 100, 200, 0.2); color: #ff64c8; }
         .topic-random { background: rgba(200, 200, 100, 0.2); color: #c8c864; }
+
+        /* New topics */
+        .topic-series-movies { background: rgba(255, 152, 0, 0.2); color: #ff9800; }
+        .topic-politically-incorrect { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+        .topic-paranormal { background: rgba(156, 39, 176, 0.2); color: #9c27b0; }
+        .topic-health-fitness { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+        .topic-vent { background: rgba(96, 125, 139, 0.2); color: #607d8b; }
+        .topic-music { background: rgba(233, 30, 99, 0.2); color: #e91e63; }
+        .topic-fashion { background: rgba(0, 188, 212, 0.2); color: #00bcd4; }
+        .topic-gaming { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+        .topic-otaku-stuff { background: rgba(103, 58, 183, 0.2); color: #673ab7; }
 
         .whisper-preview {
             color: var(--text-light);
@@ -279,6 +291,81 @@
         .auto-delete {
             color: var(--text-muted);
             font-size: 0.8rem;
+        }
+
+        /* More Dropdown Styles */
+        .more-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .more-dropdown-content {
+            display: none;
+            position: absolute;
+            background: var(--card-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            padding: 0.5rem;
+            z-index: 1000;
+            min-width: 200px;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+        }
+
+        .more-dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-topic-btn {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            margin: 0.2rem 0;
+            background: rgba(40, 40, 70, 0.7);
+            border: 1px solid var(--border-glow);
+            border-radius: 15px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-topic-btn:hover, .dropdown-topic-btn.active {
+            background: rgba(157, 78, 221, 0.3);
+            color: var(--glow-accent);
+            border-color: var(--primary-purple);
+        }
+
+        .more-button {
+            background: rgba(40, 40, 70, 0.7);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .more-button:hover, .more-button.active {
+            background: rgba(157, 78, 221, 0.3);
+            color: var(--glow-accent);
+            border-color: var(--primary-purple);
+        }
+
+        .more-button::after {
+            content: '▼';
+            margin-left: 0.5rem;
+            font-size: 0.7rem;
+            transition: transform 0.3s;
+        }
+
+        .more-button.show::after {
+            transform: rotate(180deg);
         }
 
         /* Full Whisper View */
@@ -708,6 +795,11 @@
                 width: 50px;
                 height: 50px;
             }
+
+            .more-dropdown-content {
+                right: -50px;
+                min-width: 180px;
+            }
         }
     </style>
 </head>
@@ -730,15 +822,31 @@
     <main id="browse-page" class="container">
         <h1 class="page-title">RECENT WHISPERS</h1>
         
-        <!-- Topic Filter -->
+        <!-- Topic Filter with More Dropdown -->
         <div class="topic-filter" id="topic-filter">
             <button class="topic-filter-btn active" data-topic="all">ALL</button>
             <button class="topic-filter-btn" data-topic="confession">CONFESSION</button>
             <button class="topic-filter-btn" data-topic="life">LIFE</button>
             <button class="topic-filter-btn" data-topic="secrets">SECRETS</button>
             <button class="topic-filter-btn" data-topic="advice">ADVICE</button>
-            <button class="topic-filter-btn" data-topic="love">LOVE</button>
-            <button class="topic-filter-btn" data-topic="random">RANDOM</button>
+            
+            <!-- More Dropdown -->
+            <div class="more-dropdown">
+                <button class="more-button" id="more-btn">MORE</button>
+                <div class="more-dropdown-content" id="more-dropdown">
+                    <button class="dropdown-topic-btn" data-topic="love">LOVE</button>
+                    <button class="dropdown-topic-btn" data-topic="series-movies">SERIES/MOVIES</button>
+                    <button class="dropdown-topic-btn" data-topic="politically-incorrect">POLITICALLY INCORRECT</button>
+                    <button class="dropdown-topic-btn" data-topic="paranormal">PARANORMAL</button>
+                    <button class="dropdown-topic-btn" data-topic="health-fitness">HEALTH/FITNESS</button>
+                    <button class="dropdown-topic-btn" data-topic="vent">VENT</button>
+                    <button class="dropdown-topic-btn" data-topic="music">MUSIC</button>
+                    <button class="dropdown-topic-btn" data-topic="fashion">FASHION</button>
+                    <button class="dropdown-topic-btn" data-topic="gaming">GAMING</button>
+                    <button class="dropdown-topic-btn" data-topic="otaku-stuff">OTAKU STUFF</button>
+                    <button class="dropdown-topic-btn" data-topic="random">RANDOM</button>
+                </div>
+            </div>
         </div>
 
         <!-- Whisper Grid -->
@@ -752,7 +860,7 @@
         </div>
     </main>
 
-    <!-- Page 2: Full Whisper View (Hidden by default) -->
+    <!-- Page 2: Full Whisper View -->
     <div id="whisper-page" class="container hidden">
         <div class="full-whisper-container">
             <!-- Sticky Top Bar -->
@@ -840,6 +948,15 @@
                     <option value="secrets">Secrets</option>
                     <option value="advice">Advice</option>
                     <option value="love">Love</option>
+                    <option value="series-movies">Series/Movies</option>
+                    <option value="politically-incorrect">Politically Incorrect</option>
+                    <option value="paranormal">Paranormal</option>
+                    <option value="health-fitness">Health/Fitness</option>
+                    <option value="vent">Vent</option>
+                    <option value="music">Music</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="otaku-stuff">Otaku Stuff</option>
                     <option value="random">Random</option>
                 </select>
             </div>
@@ -862,10 +979,10 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
+    <!-- JavaScript - Updated with More dropdown functionality -->
     <script>
-        // API Base URL - Change this to your backend URL
-        const API_BASE_URL = 'https://whisper-field-api.onrender.com/api';
+        // API Base URL - Updated for local testing
+        const API_BASE_URL = '/api';
 
         // DOM Elements
         const browsePage = document.getElementById('browse-page');
@@ -888,6 +1005,8 @@
         const homeButton = document.getElementById('home-button');
         const topicFilter = document.getElementById('topic-filter');
         const loadingIndicator = document.getElementById('loading');
+        const moreBtn = document.getElementById('more-btn');
+        const moreDropdown = document.getElementById('more-dropdown');
 
         // State
         let currentWhisper = null;
@@ -938,6 +1057,11 @@
             const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
             const remaining = 48 - diffHours;
             return Math.max(0, remaining);
+        }
+
+        // Format topic name for display
+        function formatTopicName(topic) {
+            return topic.split('-').map(word => word.toUpperCase()).join('/');
         }
 
         // Fetch whispers from backend
@@ -1012,7 +1136,7 @@
                     
                     <div class="card-header">
                         <div class="anonymous-icon">?</div>
-                        <div class="topic-badge topic-${whisper.topic}">${whisper.topic.toUpperCase()}</div>
+                        <div class="topic-badge topic-${whisper.topic}">${formatTopicName(whisper.topic)}</div>
                     </div>
                     <div class="whisper-preview ${whisper.is_sensitive ? 'sensitive-blur' : ''}">
                         ${preview}
@@ -1032,6 +1156,43 @@
                 
                 card.addEventListener('click', () => openWhisper(whisper.id));
                 whispersGrid.appendChild(card);
+            });
+        }
+
+        // Setup More Dropdown
+        function setupMoreDropdown() {
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moreDropdown.classList.toggle('show');
+                moreBtn.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                moreDropdown.classList.remove('show');
+                moreBtn.classList.remove('show');
+            });
+
+            // Handle dropdown topic clicks
+            moreDropdown.addEventListener('click', (e) => {
+                if (e.target.classList.contains('dropdown-topic-btn')) {
+                    e.stopPropagation();
+                    const topic = e.target.dataset.topic;
+                    
+                    // Update active states
+                    document.querySelectorAll('.topic-filter-btn, .dropdown-topic-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    e.target.classList.add('active');
+                    
+                    // Update current topic and fetch
+                    currentTopic = topic;
+                    fetchWhispers(currentTopic);
+                    
+                    // Close dropdown
+                    moreDropdown.classList.remove('show');
+                    moreBtn.classList.remove('show');
+                }
             });
         }
 
@@ -1061,10 +1222,10 @@
             // Update topic badge
             const topicBadge = document.querySelector('.full-whisper-card .topic-badge');
             topicBadge.className = `topic-badge topic-${whisper.topic}`;
-            topicBadge.textContent = whisper.topic.toUpperCase();
+            topicBadge.textContent = formatTopicName(whisper.topic);
             
             // Update full view header topic
-            document.getElementById('full-topic-badge').textContent = whisper.topic.toUpperCase();
+            document.getElementById('full-topic-badge').textContent = formatTopicName(whisper.topic);
             
             // Update timestamp
             document.getElementById('full-timestamp').textContent = formatTimeAgo(whisper.created_at);
@@ -1317,18 +1478,24 @@
             }
         });
 
-        // Topic filter
+        // Topic filter - Updated to handle both main buttons and dropdown
         topicFilter.addEventListener('click', (e) => {
-            if (e.target.classList.contains('topic-filter-btn')) {
+            if (e.target.classList.contains('topic-filter-btn') && !e.target.classList.contains('more-button')) {
                 // Update active button
-                topicFilter.querySelectorAll('.topic-filter-btn').forEach(btn => {
-                    btn.classList.remove('active');
+                document.querySelectorAll('.topic-filter-btn').forEach(btn => {
+                    if (!btn.classList.contains('more-button')) {
+                        btn.classList.remove('active');
+                    }
                 });
                 e.target.classList.add('active');
                 
                 // Update current topic and fetch whispers
                 currentTopic = e.target.dataset.topic;
                 fetchWhispers(currentTopic);
+                
+                // Close more dropdown if open
+                moreDropdown.classList.remove('show');
+                moreBtn.classList.remove('show');
             }
         });
 
@@ -1355,6 +1522,7 @@
 
         // Initialize
         initCosmicBackground();
+        setupMoreDropdown();
         fetchWhispers('all');
     </script>
 </body>

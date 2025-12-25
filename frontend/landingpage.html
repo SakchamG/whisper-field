@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhisperField — Echoes Don't Judge</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & GLOBAL === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-purple: #9d4edd;
+            --primary-glow: #c77dff;
+            --accent-orange: #ff9e00;
+            --bg-dark: #0c0c1d;
+            --card-bg: rgba(20, 20, 40, 0.85);
+            --text-light: #f8f9fa;
+            --text-muted: #adb5bd;
+            --success-green: #06d6a0;
+            --warning-yellow: #ffd166;
+            --danger-red: #ff6b6b;
+            --border: rgba(157, 78, 221, 0.2);
+        }
+
+        body {
+            font-family: 'Courier Prime', 'Courier New', monospace;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* === BACKGROUND SCENE === */
+        .sky-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .night-gradient {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0a0a2a 0%, #1a1a3a 30%, #2d1b69 100%);
+        }
+
+       .stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    /* Base layer - static subtle stars */
+    background-image: 
+        radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 60px 90px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 120px 40px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 180px 150px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 240px 80px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 280px 120px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 320px 60px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 380px 180px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 420px 100px, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 460px 140px, rgba(255, 255, 255, 0.8), transparent);
+    background-repeat: repeat;
+    background-size: 500px 500px;
+}
+
+.stars::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    /* Twinkling layer 1 - medium stars */
+    background-image: 
+        radial-gradient(2px 2px at 40px 60px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(2px 2px at 100px 30px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(2px 2px at 160px 100px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(2px 2px at 220px 50px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(2px 2px at 300px 160px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(2px 2px at 360px 90px, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(2px 2px at 440px 130px, rgba(255, 255, 255, 0.9), transparent);
+    background-repeat: repeat;
+    background-size: 500px 500px;
+    animation: starTwinkle 6s infinite ease-in-out;
+    opacity: 0;
+}
+
+.stars::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(3px 3px at 80px 150px, rgba(255, 255, 255, 1), transparent),
+        radial-gradient(3px 3px at 140px 70px, rgba(255, 255, 255, 1), transparent),
+        radial-gradient(3px 3px at 200px 120px, rgba(255, 255, 255, 1), transparent),
+        radial-gradient(3px 3px at 260px 40px, rgba(255, 255, 255, 1), transparent),
+        radial-gradient(3px 3px at 340px 180px, rgba(255, 255, 255, 1), transparent),
+        radial-gradient(3px 3px at 400px 100px, rgba(255, 255, 255, 1), transparent);
+    background-repeat: repeat;
+    background-size: 500px 500px;
+    animation: starTwinkle 8s infinite ease-in-out 2s;
+    opacity: 0;
+}
+
+/* Individual twinkling stars */
+.twinkling-star {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    animation: starPulse var(--duration) infinite ease-in-out var(--delay);
+}
+
+
+        .moon {
+            position: absolute;
+            top: 10%;
+            right: 15%;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #e9ecef 60%, #627486);
+            border-radius: 50%;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.7);
+            animation: moonFloat 20s infinite ease-in-out;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(136, 140, 145, 0.384);
+            border-radius: 90px;
+            filter: blur(5px);
+        }
+
+        .cloud-1 {
+            width: 150px;
+            height: 55px;
+            top: 20%;
+            left: 5%;
+            animation: cloudDrift 30s infinite linear;
+        }
+
+        .cloud-2 {
+            width: 120px;
+            height: 35px;
+            top: 30%;
+            left: 70%;
+            animation: cloudDrift 40s infinite linear 10s;
+        }
+
+        .cloud-3 {
+            width: 100px;
+            height: 30px;
+            top: 40%;
+            left: 25%;
+            animation: cloudDrift 35s infinite linear 5s;
+        }
+
+        .mountains {
+            position: absolute;
+            bottom: -0;
+            width: 350%;
+            height: 550px;
+            background: linear-gradient(to top, #1a1a2e, #16213e);
+            clip-path: polygon(0% 100%, 2% 75%, 5% 85%, 8% 65%, 12% 90%, 16% 70%, 20% 100%, 25% 80%, 30% 95%, 35% 75%, 40% 100%, 50% 85%, 60% 100%, 65% 90%, 70% 95%, 75% 80%, 80% 100%, 85% 88%, 90% 92%, 95% 85%, 100% 100%);
+        }
+
+        .mountain-glow {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(to top, transparent 70%, rgba(157, 78, 221, 0.08));
+            clip-path: polygon(0% 100%, 2% 75%, 5% 85%, 8% 65%, 12% 90%, 16% 70%, 20% 100%, 25% 80%, 30% 95%, 35% 75%, 40% 100%, 50% 85%, 60% 100%, 65% 90%, 70% 95%, 75% 80%, 80% 100%, 85% 88%, 90% 92%, 95% 85%, 100% 100%);
+            animation: mountainPulse 30s infinite alternate;
+        }
+
+        /* === MAIN CONTAINER === */
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* === HERO SECTION === */
+        .hero {
+            text-align: center;
+            padding: 40px 0 80px;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: var(--primary-purple);
+            text-shadow: 0 0 20px var(--primary-glow);
+            margin-bottom: 10px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-style: italic;
+            letter-spacing: 1px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 50px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* === CTA BUTTONS === */
+        .cta-section {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0 60px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier Prime', monospace;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            display: inline-flex;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-purple);
+            color: var(--text-light);
+            border: 1px solid var(--primary-purple);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-glow);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(199, 125, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-light);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(157, 78, 221, 0.1);
+            border-color: var(--primary-purple);
+            transform: translateY(-3px);
+        }
+
+        /* === TRUST MAILBOX === */
+        .trust-symbol {
+            display: flex;
+            justify-content: center;
+            margin: 60px 0;
+            position: relative;
+        }
+
+        .mailbox {
+            width: 180px;
+            height: 140px;
+            background: linear-gradient(145deg, #3a2c5e, #2d1b69);
+            border-radius: 8px;
+            position: relative;
+            border: 2px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            animation: mailboxGlow 2s infinite alternate;
+        }
+
+        .mailbox-lid {
+            position: absolute;
+            top: -15px;
+            left: 15px;
+            width: 150px;
+            height: 20px;
+            background: #2d1b69;
+            border-radius: 4px 4px 0 0;
+            transform-origin: left;
+            animation: lidBreathe 5s infinite ease-in-out;
+        }
+
+        .mailbox-body {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            width: 160px;
+            height: 130px;
+            background: linear-gradient(145deg, #4a3780, #3a2c5e);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-glow);
+            font-size: 2.5rem;
+        }
+
+        .mailbox-stand {
+            position: absolute;
+            bottom: -15px;
+            left: 70px;
+            width: 40px;
+            height: 15px;
+            background: #2d1b69;
+            border-radius: 0 0 4px 4px;
+        }
+
+        /* === TRUST INDICATORS === */
+        .trust-section {
+            margin: 80px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: var(--text-light);
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-purple), transparent);
+        }
+
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .trust-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .trust-card:hover {
+            border-color: var(--primary-purple);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(157, 78, 221, 0.1);
+        }
+
+        .trust-icon {
+            font-size: 2rem;
+            color: var(--primary-purple);
+            margin-bottom: 15px;
+        }
+
+        .trust-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: var(--text-light);
+        }
+
+        .trust-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* === TOPICS PREVIEW === */
+        .topics-section {
+            margin: 80px 0;
+        }
+
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .topic-chip {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 15px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .topic-chip:hover {
+            border-color: var(--primary-purple);
+            color: var(--text-light);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(157, 78, 221, 0.1);
+        }
+
+        /* === HOW IT WORKS === */
+        .how-it-works {
+            margin: 80px 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-purple);
+            color: var(--text-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .step h3 {
+            margin-bottom: 10px;
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .step p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* === SAFETY SECTION === */
+        .safety-section {
+            margin: 80px 0;
+        }
+
+        .safety-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .safety-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 4px solid var(--primary-purple);
+        }
+
+        .safety-icon {
+            font-size: 1.5rem;
+            color: var(--primary-purple);
+            margin-bottom: 15px;
+        }
+
+        .safety-card h3 {
+            margin-bottom: 10px;
+            color: var(--text-light);
+            font-size: 1.2rem;
+        }
+
+        .safety-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* === FINAL CTA === */
+        .final-cta {
+            text-align: center;
+            padding: 60px 40px;
+            margin: 80px 0;
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.9), rgba(30, 30, 60, 0.7));
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .final-cta h2 {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            color: var(--text-light);
+            letter-spacing: 1px;
+        }
+
+        .final-cta p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .final-cta .btn {
+            margin: 0 auto;
+        }
+
+        /* === FOOTER === */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .footer-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-purple);
+        }
+
+        .copyright {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        .owner {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes starTwinkle {
+        0%, 100% { 
+            opacity: 0; 
+            transform: scale(0.95);
+             }
+        20%, 80% { 
+            opacity: 0.7; 
+            transform: scale(1);
+             }
+        50% { 
+            opacity: 1; 
+            transform: scale(1.05);
+            }
+         }
+
+        @keyframes starPulse {
+            0%, 100% { 
+                opacity: 0.2; 
+                transform: scale(0.8);
+            }
+            30%, 70% { 
+                opacity: 0.6; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1.2);
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            }
+        }
+        @keyframes moonFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+        }
+
+        @keyframes cloudDrift {
+            0% { transform: translateX(-100px) translateY(0); }
+            100% { transform: translateX(calc(100vw + 100px)) translateY(-20px); }
+        }
+
+        @keyframes mountainPulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+
+        @keyframes mailboxGlow {
+            0% { box-shadow: 0 10px 30px rgba(231, 48, 176, 0.63); }
+            100% { box-shadow: 0 10px 30px rgba(157, 78, 221, 0.2); }
+        }
+
+        @keyframes lidBreathe {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-2deg); }
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 3rem;
+                letter-spacing: 4px;
+            }
+            
+            .tagline {
+                font-size: 1.2rem;
+            }
+            
+            .description {
+                font-size: 1rem;
+                padding: 0 20px;
+            }
+            
+            .cta-section {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .section-title {
+                font-size: 1.6rem;
+            }
+            
+            .trust-grid,
+            .topics-grid,
+            .steps,
+            .safety-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .how-it-works {
+                padding: 25px;
+            }
+            
+            .final-cta {
+                padding: 40px 20px;
+            }
+            
+            .final-cta h2 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 2.2rem;
+                letter-spacing: 3px;
+            }
+            
+            .main-container {
+                padding: 20px 15px;
+            }
+            
+            .footer-links {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Scene -->
+    <div class="sky-container">
+        <div class="night-gradient"></div>
+        <div class="stars"></div>
+        <div class="moon"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="mountains"></div>
+        <div class="mountain-glow"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="logo">WHISPERFIELD</h1>
+            <p class="tagline">"Echoes Don't Judge"</p>
+            <p class="description">
+                Post anonymously. Read freely. Vanish in 48 hours. A temporary space for honest thoughts.
+            </p>
+            
+            <div class="cta-section">
+                <a href="index.html" class="btn btn-primary" id="enterBtn">
+                    <i class="fas fa-door-open"></i> Enter WhisperField
+                </a>
+            </div>
+        </section>
+
+        <!-- Trust Symbol -->
+        <div class="trust-symbol">
+            <div class="mailbox">
+                <div class="mailbox-lid"></div>
+                <div class="mailbox-body">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="mailbox-stand"></div>
+            </div>
+        </div>
+
+        <!-- Trust Indicators -->
+        <section class="trust-section">
+            <h2 class="section-title">Absolute Anonymity</h2>
+            <div class="trust-grid">
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="fas fa-user-secret"></i></div>
+                    <h3>No Sign-Up</h3>
+                    <p>No accounts, no emails, no personal information required.</p>
+                </div>
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="fas fa-eye-slash"></i></div>
+                    <h3>No IP Tracking</h3>
+                    <p>Your connection is anonymized. We don't track who you are.</p>
+                </div>
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="fas fa-hourglass-end"></i></div>
+                    <h3>Auto-Delete in 48h</h3>
+                    <p>Every whisper disappears automatically. Nothing is permanent.</p>
+                </div>
+                <div class="trust-card">
+                    <div class="trust-icon"><i class="fas fa-database"></i></div>
+                    <h3>No Data Storage</h3>
+                    <p>We don't store personal data. Everything vanishes completely.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topics Preview -->
+        <section class="topics-section">
+            <h2 class="section-title">Whisper About Anything</h2>
+            <div class="topics-grid">
+                <div class="topic-chip">Confession</div>
+                <div class="topic-chip">Life</div>
+                <div class="topic-chip">Secrets</div>
+                <div class="topic-chip">Advice</div>
+                <div class="topic-chip">Love</div>
+                <div class="topic-chip">SERIES/MOVIES</div>
+                <div class="topic-chip">POLITICALLY INCORRECT</div>
+                <div class="topic-chip">PARANORMAL</div>
+                <div class="topic-chip">HEALTH/FITNESS</div>
+                <div class="topic-chip">VENT</div>
+                <div class="topic-chip">MUSIC</div>
+                <div class="topic-chip">FASHION</div>
+                <div class="topic-chip">GAMING</div>
+                <div class="topic-chip">OTAKU STUFF</div>
+                <div class="topic-chip">RANDOM</div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="how-it-works">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Write Anonymously</h3>
+                    <p>Type your thoughts. No username, no profile, just pure honesty.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Choose a Topic</h3>
+                    <p>Select a category that fits your whisper. Helps others find it.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Human Verification</h3>
+                    <p>Simple check to prevent spam. Protects the community.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>48-Hour Lifespan</h3>
+                    <p>Your whisper exists for 48 hours, then disappears forever.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Safety & Ethics -->
+        <section class="safety-section">
+            <h2 class="section-title">Safe Space Guidelines</h2>
+            <div class="safety-cards">
+                <div class="safety-card">
+                    <div class="safety-icon"><i class="fas fa-user-shield"></i></div>
+                    <h3>Human Verification</h3>
+                    <p>Simple checks prevent bots and spam, keeping the space authentic.</p>
+                </div>
+                <div class="safety-card">
+                    <div class="safety-icon"><i class="fas fa-hands-helping"></i></div>
+                    <h3>Admin Moderation</h3>
+                    <p>Real people review content to remove harmful material.</p>
+                </div>
+                <div class="safety-card">
+                    <div class="safety-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Content Warnings</h3>
+                    <p>Sensitive content is marked to protect readers.</p>
+                </div>
+                <div class="safety-card">
+                    <div class="safety-icon"><i class="fas fa-balance-scale"></i></div>
+                    <h3>Ethical Platform</h3>
+                    <p>This space is for honest sharing, not for abuse or harassment.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="final-cta">
+            <h2>Enter a Space Where Identity Doesn't Matter</h2>
+            <p>No login. No tracking. No permanent records. Just honest, anonymous conversation that respects your privacy.</p>
+            <a href="index.html" class="btn btn-primary" id="finalEnterBtn">
+                <i class="fas fa-door-open"></i> Enter WhisperField
+            </a>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Use</a>
+                <a href="#" class="footer-link">Auto-Delete Policy</a>
+                <a href="#" class="footer-link">Contact Admin</a>
+            </div>
+            <p class="copyright">© 2024 WhisperField. All whispers vanish in 48 hours.</p>
+            <p class="copyright">No personal data is stored. All content is temporary.</p>
+            <p class="owner">A project by skmetaverse</p>
+        </footer>
+    </div>
+
+    <script>
+        // Create twinkling stars
+        document.addEventListener('DOMContentLoaded', function() {
+            const starsContainer = document.querySelector('.stars');
+            if (!starsContainer) return;
+            
+            const starCount = 15;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'twinkling-star';
+                
+                const left = Math.random() * 100;
+                const top = Math.random() * 80;
+                const size = Math.random() * 3 + 1;
+                const duration = Math.random() * 4 + 2;
+                const delay = Math.random() * 5;
+                
+                star.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${left}vw;
+                    top: ${top}vh;
+                    --duration: ${duration}s;
+                    --delay: ${delay}s;
+                `;
+                
+                if (Math.random() > 0.7) {
+                    star.style.animation += ', starShimmer ' + (duration + 1) + 's infinite ' + (delay + 1) + 's';
+                }
+                
+                starsContainer.appendChild(star);
+            }
+        });
+
+        // Add subtle scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all sections for fade-in effect
+        document.querySelectorAll('section, .trust-symbol').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('WhisperField — Echoes Don\'t Judge');
+            console.log('A project by skmetaverse');
+            
+            // Set current year in footer
+            const yearSpan = document.querySelector('.copyright');
+            if (yearSpan) {
+                yearSpan.textContent = yearSpan.textContent.replace('2024', new Date().getFullYear());
+            }
+        });
+    </script>
+</body>
+</html>
